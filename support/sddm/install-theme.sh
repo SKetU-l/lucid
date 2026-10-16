@@ -68,8 +68,10 @@ getent passwd | while IFS=: read -r name _ uid gid _; do
 done
 
 # a fingerprint at the login screen. sddm checks one attempt at a time through
-# its own pam service, so a typed password goes first and only an empty one
-# (or a wrong one) falls through to the reader. marked, so it comes out again
+# its own pam service: a typed password goes first, an empty one reaches the
+# reader and ends at pam_deny so faillock never counts it. marked, so it comes out again
+FP_HELPER="$DEST/pam-empty-password"
+install -Dm755 "$SRC/support/sddm/pam-empty-password" "$FP_HELPER"
 FP_BEGIN="# >>> lucid: fingerprint login"
 FP_END="# <<< lucid: fingerprint login"
 pam_module() {
@@ -84,13 +86,16 @@ if [[ $FINGER == off && -f "$PAM_SDDM" ]]; then
 elif [[ $FINGER == on && -f "$PAM_SDDM" ]]; then
     if ! pam_module pam_fprintd.so; then
         echo "install-theme.sh: pam_fprintd.so is not installed (fprintd), leaving $PAM_SDDM alone" >&2
-    elif ! grep -q "^$FP_BEGIN" "$PAM_SDDM"; then
+    else
         [[ -e "$PAM_SDDM.lucid-backup" ]] || cp -p "$PAM_SDDM" "$PAM_SDDM.lucid-backup"
-        awk -v begin="$FP_BEGIN" -v end="$FP_END" '
+        sed -i "/^$FP_BEGIN/,/^$FP_END/d" "$PAM_SDDM"
+        awk -v begin="$FP_BEGIN" -v end="$FP_END" -v helper="$FP_HELPER" '
             !done && /^[[:space:]]*-?auth[[:space:]]/ {
                 print begin " (install-theme.sh --no-fingerprint takes it out)"
-                print "auth        [success=1 new_authtok_reqd=1 default=ignore]  pam_unix.so try_first_pass likeauth nullok"
-                print "auth        sufficient  pam_fprintd.so max-tries=1 timeout=15"
+                print "auth        [success=3 new_authtok_reqd=3 default=ignore]  pam_unix.so try_first_pass likeauth nullok nodelay"
+                print "auth        [success=ignore default=2]  pam_exec.so quiet expose_authtok " helper
+                print "auth        sufficient  pam_fprintd.so max-tries=1 timeout=10"
+                print "auth        [default=die]  pam_deny.so"
                 print end
                 done = 1
             }
