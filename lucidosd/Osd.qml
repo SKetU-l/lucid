@@ -253,7 +253,8 @@ PanelWindow {
         osdWindow.showMic();
         Sounds.feedback(osdWindow.micMuted ? "mic-off" : "mic-on", Prefs.soundOnMic);
     }
-    BackgroundEffect.blurRegion: (Theme.blurAmount > 0 && card.visible) ? osdBlurRegion : null
+    // shrunk rather than dropped: hyprland keeps a dropped region on screen
+    BackgroundEffect.blurRegion: Theme.blurAmount > 0 ? osdBlurRegion : null
 
     anchors {
         bottom: true
@@ -458,8 +459,8 @@ PanelWindow {
 
         x: Math.ceil(osdBlurRegion.paintedX - 0.002)
         y: Math.ceil(osdBlurRegion.paintedY - 0.002)
-        width: Math.max(0, Math.floor(osdBlurRegion.paintedX + osdBlurRegion.paintedWidth + 0.002) - Math.ceil(osdBlurRegion.paintedX - 0.002))
-        height: Math.max(0, Math.floor(osdBlurRegion.paintedY + osdBlurRegion.paintedHeight + 0.002) - Math.ceil(osdBlurRegion.paintedY - 0.002))
+        width: card.visible ? Math.max(0, Math.floor(osdBlurRegion.paintedX + osdBlurRegion.paintedWidth + 0.002) - Math.ceil(osdBlurRegion.paintedX - 0.002)) : 0
+        height: card.visible ? Math.max(0, Math.floor(osdBlurRegion.paintedY + osdBlurRegion.paintedHeight + 0.002) - Math.ceil(osdBlurRegion.paintedY - 0.002)) : 0
         radius: Math.round(card.radius * card.scale)
     }
 
