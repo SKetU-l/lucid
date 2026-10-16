@@ -142,6 +142,7 @@ Item {
     }
 
     Component.onCompleted: {
+        Lock.driver = surface.primary;
         surface.syncUsers();
         surface.syncSessions();
         // sddm remembers who logged in last, and into what

@@ -115,6 +115,8 @@ QtObject {
     readonly property bool fingerprint: !root.manual && root.needsPassword && Theme.conf("fingerprintLogin", "false") === "true" && Theme.conf("fingerprint", "false") === "true"
     // an empty login kept open while idle; sddm cannot cancel it, so a password waits its turn
     property bool listening: false
+    // sddm gives every screen its own copy of this; only the one with the card listens
+    property bool driver: true
     property string listenKey: ""
     property double listenedAt: 0
     property string queued: ""
@@ -159,7 +161,7 @@ QtObject {
     }
 
     function listen() {
-        if (!root.fingerprint || root.listening || !root.acceptsInput || root.typing || root.userName === "")
+        if (!root.driver || !root.fingerprint || root.listening || !root.acceptsInput || root.typing || root.userName === "")
             return ;
 
         listenTimer.stop();
